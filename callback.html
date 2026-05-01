@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OAuth Callback &mdash; OI Internal QuickBooks Connector</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 720px;
+    margin: 4em auto;
+    padding: 0 1.5em;
+    line-height: 1.6;
+    color: #1a1a1a;
+  }
+  header { border-bottom: 1px solid #e5e5e5; padding-bottom: 1em; margin-bottom: 2em; }
+  h1 { margin: 0; font-size: 1.6em; }
+  .ok { color: #1a7d3a; }
+  .err { color: #b91c1c; }
+  .field { margin: 1.5em 0; }
+  .field label { font-weight: 600; display: block; margin-bottom: 0.4em; font-size: 0.9em; color: #444; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field .value {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.95em;
+    padding: 0.85em 1em;
+    background: #f4f6f8;
+    border: 1px solid #d6dadf;
+    border-radius: 4px;
+    word-break: break-all;
+    margin-bottom: 0.4em;
+  }
+  button {
+    background: #1a5dab;
+    color: white;
+    border: none;
+    padding: 0.5em 1em;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+  button:hover { background: #16498a; }
+  .copied { color: #1a7d3a; font-size: 0.85em; margin-left: 0.6em; }
+  .panel {
+    background: #fff8e6;
+    border-left: 3px solid #d99a00;
+    padding: 1em 1.25em;
+    margin: 2em 0;
+    border-radius: 0 4px 4px 0;
+  }
+  footer { margin-top: 3em; padding-top: 1em; border-top: 1px solid #e5e5e5; color: #888; font-size: 0.85em; }
+  pre.combined {
+    background: #1a1a1a;
+    color: #e6e6e6;
+    padding: 1em;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.9em;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="status">OAuth Callback</h1>
+  <div class="tag">OI Internal QuickBooks Connector</div>
+</header>
+
+<main>
+<div id="ok-content" style="display:none;">
+  <p class="ok"><strong>Authorization successful.</strong> Copy the values below into the terminal where the OAuth setup script is running.</p>
+
+  <div class="field">
+    <label>Authorization Code</label>
+    <div class="value" id="code">&mdash;</div>
+    <button onclick="copyVal('code')">Copy code</button>
+    <span class="copied" id="code-copied"></span>
+  </div>
+
+  <div class="field">
+    <label>Realm ID (Company ID)</label>
+    <div class="value" id="realmId">&mdash;</div>
+    <button onclick="copyVal('realmId')">Copy realm ID</button>
+    <span class="copied" id="realmId-copied"></span>
+  </div>
+
+  <div class="panel">
+    <strong>Or copy both at once</strong> (the script accepts this combined format):
+    <pre class="combined" id="combined">&mdash;</pre>
+    <button onclick="copyVal('combined', true)">Copy combined</button>
+    <span class="copied" id="combined-copied"></span>
+  </div>
+
+  <p style="color:#666; font-size:0.9em;">
+    These values are short-lived (the authorization code expires in a few minutes).
+    The terminal script will exchange them for a long-lived refresh token.
+    You can close this tab as soon as the script confirms it captured them.
+  </p>
+</div>
+
+<div id="err-content" style="display:none;">
+  <p class="err"><strong>Authorization failed.</strong></p>
+  <div class="field">
+    <label>Error</label>
+    <div class="value" id="errorDetail">&mdash;</div>
+  </div>
+  <p>Return to the terminal and re-run the OAuth setup script.</p>
+</div>
+
+<div id="empty-content" style="display:none;">
+  <p>This page is the OAuth callback for the OI Internal QuickBooks Connector.</p>
+  <p>It only displays useful content when reached via an Intuit OAuth redirect (with <code>code</code> and <code>realmId</code> query parameters).</p>
+  <p><a href="./">Return to home</a>.</p>
+</div>
+</main>
+
+<footer>
+  &copy; 2026 Overhead Intelligence Inc.
+</footer>
+
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get("code");
+  var realmId = params.get("realmId");
+  var error = params.get("error");
+  var errorDescription = params.get("error_description");
+
+  if (error) {
+    document.getElementById("err-content").style.display = "block";
+    document.getElementById("status").innerHTML = "Authorization Failed";
+    document.getElementById("status").className = "err";
+    document.getElementById("errorDetail").textContent = error + (errorDescription ? " — " + errorDescription : "");
+    return;
+  }
+
+  if (!code || !realmId) {
+    document.getElementById("empty-content").style.display = "block";
+    return;
+  }
+
+  document.getElementById("ok-content").style.display = "block";
+  document.getElementById("status").innerHTML = "Authorization Successful";
+  document.getElementById("status").className = "ok";
+  document.getElementById("code").textContent = code;
+  document.getElementById("realmId").textContent = realmId;
+  document.getElementById("combined").textContent = code + " " + realmId;
+})();
+
+function copyVal(id, isText) {
+  var el = document.getElementById(id);
+  var val = el.textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(val).then(function() {
+      var msg = document.getElementById(id + "-copied");
+      if (msg) {
+        msg.textContent = "Copied";
+        setTimeout(function() { msg.textContent = ""; }, 2000);
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>
